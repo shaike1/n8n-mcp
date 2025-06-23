@@ -88,10 +88,10 @@ n8nmcp/
 ### Environment Variables
 ```bash
 # Core Configuration
-N8N_BASE_URL=https://app.right-api.com
-N8N_API_KEY=eyJhbGciOiJIUzI1NiIs...
+N8N_HOST=https://your-n8n-instance.com
+N8N_API_KEY=your_n8n_api_key_here
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=a0506a70dbaf3486014ceac508d7db2d7607fba8
+ADMIN_PASSWORD=your_secure_admin_password_hash
 PORT=3007
 NODE_ENV=production
 

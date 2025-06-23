@@ -16,7 +16,7 @@ The authentication form now includes:
 
 1. **Admin Credentials**:
    - Username: `admin` 
-   - Password: `a0506a70dbaf3486014ceac508d7db2d7607fba8`
+   - Password: `your_secure_admin_password_hash`
 
 2. **N8N Connection Details**:
    - **N8N Host URL**: Your N8N instance URL (e.g., `https://your-n8n-instance.com`)
@@ -32,7 +32,7 @@ The authentication form now includes:
 ### Example 1: Personal N8N Instance
 ```
 Admin Username: admin
-Admin Password: a0506a70dbaf3486014ceac508d7db2d7607fba8
+Admin Password: your_secure_admin_password_hash
 N8N Host URL: https://my-n8n.example.com
 N8N API Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
@@ -40,7 +40,7 @@ N8N API Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ### Example 2: Cloud N8N Instance  
 ```
 Admin Username: admin
-Admin Password: a0506a70dbaf3486014ceac508d7db2d7607fba8
+Admin Password: your_secure_admin_password_hash
 N8N Host URL: https://app.n8n.cloud
 N8N API Key: n8n_api_12345678901234567890...
 ```
@@ -48,7 +48,7 @@ N8N API Key: n8n_api_12345678901234567890...
 ### Example 3: Self-Hosted N8N
 ```
 Admin Username: admin
-Admin Password: a0506a70dbaf3486014ceac508d7db2d7607fba8
+Admin Password: your_secure_admin_password_hash
 N8N Host URL: https://workflows.mycompany.com
 N8N API Key: my-custom-api-key-here
 ```

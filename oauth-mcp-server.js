@@ -19,7 +19,7 @@ const authenticatedSessions = new Map(); // Track OAuth-authenticated sessions
 
 // Admin authentication - hardcoded for testing
 const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'a0506a70dbaf3486014ceac508d7db2d7607fba8';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'your_secure_admin_password_hash';
 const adminSessions = new Map(); // Track authenticated admin sessions
 
 console.log('Admin Authentication:');
@@ -383,10 +383,10 @@ const httpServer = http.createServer(async (req, res) => {
   if (req.method === 'GET' && parsedUrl.pathname === '/.well-known/oauth-authorization-server') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
-      issuer: 'https://n8n-mcp.right-api.com',
-      authorization_endpoint: 'https://n8n-mcp.right-api.com/oauth/authorize',
-      token_endpoint: 'https://n8n-mcp.right-api.com/oauth/token',
-      registration_endpoint: 'https://n8n-mcp.right-api.com/oauth/register',
+      issuer: process.env.SERVER_URL || 'https://your-mcp-server-domain.com',
+      authorization_endpoint: `${process.env.SERVER_URL || 'https://your-mcp-server-domain.com'}/oauth/authorize`,
+      token_endpoint: `${process.env.SERVER_URL || 'https://your-mcp-server-domain.com'}/oauth/token`,
+      registration_endpoint: `${process.env.SERVER_URL || 'https://your-mcp-server-domain.com'}/oauth/register`,
       scopes_supported: ['mcp'],
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
@@ -441,7 +441,7 @@ const httpServer = http.createServer(async (req, res) => {
           clientId: 'api-client',
           scope: scope || 'mcp',
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
-          resource: 'https://n8n-mcp.right-api.com',
+          resource: process.env.SERVER_URL || 'https://your-mcp-server-domain.com',
           description: description || 'API Token',
           createdAt: new Date()
         };

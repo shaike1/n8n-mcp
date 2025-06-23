@@ -135,7 +135,7 @@ app.get('/', (req, res) => {
       },
       serverInfo: mcpServer.getServerInfo(),
       documentation: {
-        integration: 'Use https://n8n-mcp.right-api.com as MCP endpoint in Claude.ai'
+        integration: 'Use https://your-mcp-server-domain.com as MCP endpoint in Claude.ai'
       }
     });
   } else {

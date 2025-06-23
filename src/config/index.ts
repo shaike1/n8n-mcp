@@ -28,7 +28,7 @@ export const config = {
     sessionSecret: process.env.SESSION_SECRET || 'n8n-mcp-secret-key-change-me',
     jwtSecret: process.env.JWT_SECRET || 'jwt-secret-key-change-me',
     tokenExpiry: process.env.TOKEN_EXPIRY || '24h',
-    adminEmail: process.env.ADMIN_EMAIL || 'admin@right-api.com',
+    adminEmail: process.env.ADMIN_EMAIL || 'admin@your-domain.com',
     adminPassword: process.env.ADMIN_PASSWORD || 'changeme',
     adminName: process.env.ADMIN_NAME || 'Administrator',
   },
