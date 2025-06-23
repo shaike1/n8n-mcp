@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  n8n-mcp-server:
+    build: .
+    container_name: n8n-mcp-server
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - HOST=0.0.0.0
+      - N8N_BASE_URL=${N8N_BASE_URL:-http://n8n:5678}
+      - N8N_API_KEY=${N8N_API_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - STREAM_HEARTBEAT_INTERVAL=${STREAM_HEARTBEAT_INTERVAL:-30000}
+      - MAX_STREAM_CLIENTS=${MAX_STREAM_CLIENTS:-100}
+      - AUTH_ENABLED=${AUTH_ENABLED:-false}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID:-}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET:-}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-}
+      - SESSION_SECRET=${SESSION_SECRET:-default-session-secret}
+      - JWT_SECRET=${JWT_SECRET:-default-jwt-secret}
+      - TOKEN_EXPIRY=${TOKEN_EXPIRY:-24h}
+      - DOMAIN=${DOMAIN:-localhost}
+      - AUTH_TYPE=${AUTH_TYPE:-both}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@right-api.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - ADMIN_NAME=${ADMIN_NAME:-Administrator}
+    networks:
+      - traefik
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      
+      # HTTP Router
+      - "traefik.http.routers.n8n-mcp.rule=Host(`n8n-mcp.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.n8n-mcp.entrypoints=websecure"
+      - "traefik.http.routers.n8n-mcp.tls=true"
+      - "traefik.http.routers.n8n-mcp.tls.certresolver=${CERT_RESOLVER:-letsencrypt}"
+      
+      # Service
+      - "traefik.http.services.n8n-mcp.loadbalancer.server.port=3004"
+      
+      # Middlewares
+      - "traefik.http.routers.n8n-mcp.middlewares=n8n-mcp-headers"
+      - "traefik.http.middlewares.n8n-mcp-headers.headers.accesscontrolallowmethods=GET,POST,OPTIONS,PUT,DELETE"
+      - "traefik.http.middlewares.n8n-mcp-headers.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.n8n-mcp-headers.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.n8n-mcp-headers.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.n8n-mcp-headers.headers.addvaryheader=true"
+      
+      # Optional: HTTP to HTTPS redirect
+      - "traefik.http.routers.n8n-mcp-http.rule=Host(`n8n-mcp.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.n8n-mcp-http.entrypoints=web"
+      - "traefik.http.routers.n8n-mcp-http.middlewares=n8n-mcp-redirect"
+      - "traefik.http.middlewares.n8n-mcp-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.n8n-mcp-redirect.redirectscheme.permanent=true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get({host:'0.0.0.0',port:3004,path:'/health',timeout:5000}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+
+networks:
+  traefik:
+    external: true

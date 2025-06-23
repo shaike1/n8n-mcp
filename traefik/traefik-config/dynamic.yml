@@ -1,0 +1,79 @@
+# Dynamic configuration file for Traefik
+http:
+  middlewares:
+    # CORS middleware for MCP server
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowOriginList:
+          - "*"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+        accessControlAllowCredentials: true
+
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+    # Rate limiting
+    rate-limit:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 200
+
+    # Compression
+    compression:
+      compress: {}
+
+  routers:
+    # API routes with specific middlewares
+    api:
+      rule: "Host(`api.example.com`)"
+      service: "api"
+      middlewares:
+        - "cors-headers"
+        - "security-headers"
+        - "rate-limit"
+        - "compression"
+
+  services:
+    # Load balancer configuration
+    n8n-mcp-lb:
+      loadBalancer:
+        servers:
+          - url: "http://n8n-mcp-server:3000"
+        healthCheck:
+          path: "/health"
+          interval: "30s"
+          timeout: "10s"
+
+# TLS configuration
+tls:
+  options:
+    modern:
+      minVersion: "VersionTLS12"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+      curvePreferences:
+        - "CurveP521"
+        - "CurveP384"

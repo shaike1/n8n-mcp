@@ -1,0 +1,8 @@
+HTTP/2 200 
+access-control-allow-headers: Content-Type, Authorization, Mcp-Session-Id, Last-Event-ID
+access-control-allow-methods: GET, POST, DELETE, OPTIONS
+access-control-allow-origin: *
+content-type: application/json
+date: Sun, 22 Jun 2025 20:26:50 GMT
+mcp-session-id: 725633f2-8a11-4224-b299-4a5828609be2
+
