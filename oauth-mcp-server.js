@@ -914,6 +914,8 @@ const httpServer = http.createServer(async (req, res) => {
       adminSessionToken: sessionCookie // Link to admin session
     });
     
+    console.log(`Created auth code with admin session token: ${sessionCookie ? sessionCookie.substring(0, 8) + '...' : 'null'}`);
+    
     console.log(`User approved authorization for client: ${client_id}`);
     
     // Redirect with authorization code
@@ -1029,7 +1031,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // MCP endpoint (Streamable HTTP with OAuth)
-  if (parsedUrl.pathname === '/') {
+  if (parsedUrl.pathname === '/' || parsedUrl.pathname === '/mcp') {
     if (req.method === 'POST') {
       // Debug all headers
       console.log('All headers:', JSON.stringify(req.headers, null, 2));
@@ -1104,12 +1106,13 @@ const httpServer = http.createServer(async (req, res) => {
             
             // If we have any authenticated clients and this is a new session,
             // link it to the admin session from the OAuth flow
+            let mostRecentAdminToken = null;
+            let mostRecentTime = 0;
+            
+            // First try to find admin token from authenticated sessions
             if (authenticatedSessions.size > 0) {
-              // Find the most recent authenticated session with admin token
-              let mostRecentAdminToken = null;
-              let mostRecentTime = 0;
-              
               for (const [, authData] of authenticatedSessions.entries()) {
+                console.log('Checking authenticated session:', { hasAdminToken: !!authData.adminSessionToken, authTime: authData.authenticatedAt });
                 if (authData.adminSessionToken) {
                   const authTime = authData.authenticatedAt.getTime();
                   if (authTime > mostRecentTime) {
@@ -1118,18 +1121,38 @@ const httpServer = http.createServer(async (req, res) => {
                   }
                 }
               }
-              
-              if (mostRecentAdminToken) {
-                // Store session as authenticated and link to admin session
-                sessions.set(sessionId, {
-                  authenticated: true,
-                  createdAt: new Date(),
-                  adminSessionToken: mostRecentAdminToken
-                });
-                console.log(`Marked session ${sessionId} as authenticated and linked to admin session ${mostRecentAdminToken.substring(0, 8)}...`);
-              } else {
-                console.log('No authenticated session with admin token found');
+            }
+            
+            // If no admin token found in authenticated sessions, check admin sessions directly
+            if (!mostRecentAdminToken && adminSessions.size > 0) {
+              console.log('No admin token in authenticated sessions, checking admin sessions directly');
+              for (const [adminToken, adminData] of adminSessions.entries()) {
+                console.log('Checking admin session:', { token: adminToken.substring(0, 8) + '...', authenticated: adminData.authenticated, hasN8N: !!(adminData.n8nHost && adminData.n8nApiKey) });
+                if (adminData.authenticated && adminData.n8nHost && adminData.n8nApiKey) {
+                  const createTime = adminData.createdAt.getTime();
+                  if (createTime > mostRecentTime) {
+                    mostRecentTime = createTime;
+                    mostRecentAdminToken = adminToken;
+                  }
+                }
               }
+            }
+            
+            if (mostRecentAdminToken) {
+              // Store session as authenticated and link to admin session
+              sessions.set(sessionId, {
+                authenticated: true,
+                createdAt: new Date(),
+                adminSessionToken: mostRecentAdminToken
+              });
+              console.log(`Marked session ${sessionId} as authenticated and linked to admin session ${mostRecentAdminToken.substring(0, 8)}...`);
+            } else {
+              console.log('No admin session with N8N credentials found');
+              // Store as authenticated but without admin token (will use environment variables)
+              sessions.set(sessionId, {
+                authenticated: true,
+                createdAt: new Date()
+              });
             }
           }
           
