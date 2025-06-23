@@ -1080,7 +1080,7 @@ const httpServer = http.createServer(async (req, res) => {
               code: -32001,
               message: 'Unauthorized - OAuth authentication required',
               data: {
-                auth_url: 'https://n8n-mcp.right-api.com/.well-known/oauth-authorization-server'
+                auth_url: `${process.env.SERVER_URL || 'https://your-mcp-server-domain.com'}/.well-known/oauth-authorization-server`
               }
             }
           }));

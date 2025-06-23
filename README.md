@@ -53,7 +53,7 @@ docker-compose up -d
 ### 4. Claude.ai Integration
 
 1. Go to Claude.ai integrations
-2. Add MCP server with URL: `https://your-domain.com/`
+2. Add MCP server with URL: `https://your-mcp-server-domain.com/`
 3. Complete OAuth flow with your admin credentials
 4. Enter your N8N instance URL and API key
 
@@ -142,7 +142,7 @@ curl -X POST http://localhost:3007/ \
 ```yaml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.n8n-mcp.rule=Host(`your-domain.com`)"
+  - "traefik.http.routers.n8n-mcp.rule=Host(`your-mcp-server-domain.com`)"
   - "traefik.http.routers.n8n-mcp.entrypoints=websecure"
   - "traefik.http.routers.n8n-mcp.tls=true"
   - "traefik.http.routers.n8n-mcp.tls.certresolver=mytlschallenge"
