@@ -145,7 +145,7 @@ docker logs n8n-mcp-server
 | Variable | Description | Example | Required |
 |----------|-------------|---------|----------|
 | `ADMIN_USERNAME` | Admin username | `admin` | Yes |
-| `ADMIN_PASSWORD` | Password hash (SHA-1) | `a0506a70dbaf3486...` | Yes |
+| `ADMIN_PASSWORD` | Password hash (SHA-1) | `your_secure_hash...` | Yes |
 
 #### Security Configuration
 
