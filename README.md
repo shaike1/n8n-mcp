@@ -26,7 +26,7 @@ This breakthrough implementation enables Claude.ai to directly manage N8N workfl
 - 🚀 **Production Ready**: Docker deployment with Traefik integration
 - 🔓 **Universal Access**: Connect any N8N instance dynamically
 
-![Integration Overview](https://via.placeholder.com/900x300/28A745/FFFFFF?text=Claude.ai+%2B+N8N+%3D+Workflow+Automation+Magic)
+![Integration Overview](screenshots/integration-overview.png)
 *Visual: Claude.ai seamlessly integrated with N8N workflows*
 
 ## ✨ Features
@@ -57,9 +57,9 @@ The MCP server provides 9 N8N tools for workflow automation:
 
 ## 🚀 Quick Start
 
-> 📸 **Screenshots coming soon!** We'll add visual guides showing the complete setup process.
+> 📸 **Complete visual guide with real screenshots of the integration process**
 
-![Claude.ai Integration Demo](https://via.placeholder.com/800x400/4A90E2/FFFFFF?text=Claude.ai+N8N+Integration+Demo)
+![Claude.ai Integration Demo](screenshots/claude-integration-demo.png)
 *Screenshot: Claude.ai successfully managing N8N workflows*
 
 ### 1️⃣ Clone and Setup
@@ -97,24 +97,49 @@ docker logs n8n-mcp-server -f
 
 ### 4️⃣ Integrate with Claude.ai
 
-![Claude.ai Settings](https://via.placeholder.com/600x400/28A745/FFFFFF?text=Claude.ai+Settings+Page)
-*Screenshot: Adding MCP integration in Claude.ai*
+![Claude.ai Settings](screenshots/claude-ai-integrations.png)
+*Screenshot: Adding MCP integration in Claude.ai Settings*
 
 1. **Open Claude.ai** → Settings → Integrations
 2. **Add Custom Integration**:
+   
+   ![MCP Server Configuration](screenshots/mcp-server-config.png)
+   *Screenshot: MCP server configuration form*
+   
    - Name: `N8N Workflow Manager`
    - URL: `https://your-domain.com/`
    - Type: `MCP Server`
-3. **Authenticate**: Login with admin credentials
+
+3. **OAuth Authorization**: Login with admin credentials
+   
+   ![OAuth Authorization](screenshots/oauth-authorization.png)
+   *Screenshot: OAuth authorization page with admin login*
+
 4. **Connect N8N**: Enter your N8N instance URL and API key
-5. **Start Using**: Ask Claude to list your workflows!
+   
+   ![N8N Credentials](screenshots/n8n-credentials-form.png)
+   *Screenshot: N8N credentials form*
+
+5. **Authorization Success**:
+   
+   ![OAuth Success](screenshots/oauth-success.png)
+   *Screenshot: Successful authorization*
+
+6. **Integration Connected**:
+   
+   ![Integration Connected](screenshots/claude-integration-connected.png)
+   *Screenshot: MCP integration showing as connected*
 
 ### 5️⃣ First Test
 
-![Workflow List](https://via.placeholder.com/700x500/17A2B8/FFFFFF?text=N8N+Workflows+in+Claude.ai)
+![Tools Available](screenshots/claude-tools-available.png)
+*Screenshot: Claude.ai showing available N8N tools*
+
+![Workflow List](screenshots/workflow-list-example.png)
 *Screenshot: Claude.ai displaying N8N workflows*
 
 ```
+Ask Claude: "What MCP tools do you have available?"
 Ask Claude: "Can you list my N8N workflows?"
 ```
 
@@ -144,7 +169,7 @@ The included `docker-compose.yml` provides:
 
 ## 🔐 Authentication Flow
 
-![OAuth Flow Diagram](https://via.placeholder.com/800x600/6F42C1/FFFFFF?text=OAuth+2.1+Flow+Diagram)
+![OAuth Flow Diagram](screenshots/oauth-flow-diagram.png)
 *Diagram: Complete OAuth 2.1 authentication process*
 
 1. **OAuth Authorization** - Claude.ai redirects to authorization endpoint
@@ -193,7 +218,7 @@ curl -X POST http://localhost:3007/ \
 
 ## 🚀 Production Deployment
 
-![Deployment Architecture](https://via.placeholder.com/900x600/DC3545/FFFFFF?text=Production+Architecture+Diagram)
+![Deployment Architecture](screenshots/deployment-architecture.png)
 *Diagram: Production deployment with Traefik, Docker, and SSL*
 
 ### 📋 Prerequisites
@@ -258,7 +283,7 @@ curl https://your-domain.com/.well-known/oauth-authorization-server
 
 ## 🏗️ Architecture
 
-![System Architecture](https://via.placeholder.com/1000x400/FFC107/000000?text=Claude.ai+%E2%86%92+OAuth+%E2%86%92+MCP+Server+%E2%86%92+N8N)
+![System Architecture](screenshots/system-architecture.png)
 *Diagram: Complete system architecture and data flow*
 
 ```mermaid
@@ -288,7 +313,7 @@ graph TD
 
 ## 🔧 Troubleshooting
 
-![Debug Console](https://via.placeholder.com/800x500/343A40/FFFFFF?text=Server+Logs+%26+Debug+Console)
+![Debug Console](screenshots/server-logs.png)
 *Screenshot: Debug console showing MCP protocol messages*
 
 ### ⚠️ Common Issues
@@ -363,7 +388,7 @@ MIT License - see LICENSE file for details
 
 ## 💬 Support
 
-![GitHub Issues](https://via.placeholder.com/600x300/6C757D/FFFFFF?text=GitHub+Issues+%26+Support)
+![GitHub Issues](screenshots/github-support.png)
 *We're here to help! Open an issue for support.*
 
 - GitHub Issues: Report bugs and feature requests
