@@ -1,6 +1,16 @@
-# N8N MCP Server
+# N8N MCP Server for Claude.ai Web Integration
 
-A Model Context Protocol (MCP) server that provides Claude.ai with direct access to N8N workflow automation capabilities through OAuth 2.1 authentication.
+🚀 **First-ever working MCP server that brings N8N workflow automation directly to Claude.ai web interface**
+
+This breakthrough implementation enables Claude.ai to directly manage N8N workflows through a secure, multi-tenant MCP server with OAuth 2.1 authentication. Unlike desktop-only solutions, this server works entirely through HTTP streaming, making N8N accessible from any Claude.ai web session.
+
+## 🎯 What Makes This Special
+
+- **Web-First Design**: Works with Claude.ai web interface (not just desktop)
+- **Protocol Breakthrough**: Solves Claude.ai's non-standard MCP implementation
+- **Multi-Tenant Architecture**: Multiple users, multiple N8N instances
+- **Production Ready**: Docker deployment with Traefik integration
+- **Universal Access**: Connect any N8N instance dynamically
 
 ## Features
 
@@ -30,32 +40,55 @@ The MCP server provides 9 N8N tools for workflow automation:
 
 ## Quick Start
 
-### 1. Clone the Repository
+### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/yourusername/n8nmcp.git
 cd n8nmcp
-```
-
-### 2. Environment Setup
-
-```bash
 cp .env.example .env
-# Edit .env with your configuration
 ```
 
-### 3. Docker Deployment
+### 2. Configure Environment
+
+Edit `.env` file with your settings:
+```bash
+# Required
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-password-hash
+SERVER_URL=https://your-domain.com
+CORS_ORIGIN=https://claude.ai
+
+# Optional (can be set via login form)
+N8N_HOST=https://your-n8n-instance.com
+N8N_API_KEY=your-n8n-api-key
+```
+
+### 3. Deploy with Docker
 
 ```bash
+# Make sure you're in the n8nmcp directory
 docker-compose up -d
+
+# Check logs
+docker logs n8n-mcp-server -f
 ```
 
-### 4. Claude.ai Integration
+### 4. Integrate with Claude.ai
 
-1. Go to Claude.ai integrations
-2. Add MCP server with URL: `https://your-mcp-server-domain.com/`
-3. Complete OAuth flow with your admin credentials
-4. Enter your N8N instance URL and API key
+1. **Open Claude.ai** → Settings → Integrations
+2. **Add Custom Integration**:
+   - Name: `N8N Workflow Manager`
+   - URL: `https://your-domain.com/`
+   - Type: `MCP Server`
+3. **Authenticate**: Login with admin credentials
+4. **Connect N8N**: Enter your N8N instance URL and API key
+5. **Start Using**: Ask Claude to list your workflows!
+
+### 5. First Test
+
+```
+Ask Claude: "Can you list my N8N workflows?"
+```
 
 ## Configuration
 
@@ -127,25 +160,66 @@ curl -X POST http://localhost:3007/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
 
-## Deployment
+## Production Deployment
 
-### Production Deployment
+### Prerequisites
 
-1. Configure environment variables
-2. Set up reverse proxy (Traefik/Nginx)
-3. Enable SSL/TLS certificates
-4. Configure domain name
-5. Update CORS origins
+- Domain name with DNS pointing to your server
+- Docker and Docker Compose installed
+- Traefik proxy running (or configure your own reverse proxy)
 
-### Traefik Labels
+### Step-by-Step Deployment
 
+1. **Server Setup**
+```bash
+# Clone to your server
+git clone https://github.com/yourusername/n8nmcp.git
+cd n8nmcp
+
+# Configure environment
+cp .env.example .env
+nano .env  # Edit with your settings
+```
+
+2. **Environment Configuration**
+```bash
+# Generate secure password hash
+node -e "console.log(require('crypto').createHash('sha256').update('your-password').digest('hex'))"
+
+# Update .env file
+SERVER_URL=https://your-domain.com
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=generated-hash-above
+CORS_ORIGIN=https://claude.ai
+```
+
+3. **Deploy with Docker**
+```bash
+# Add to existing docker-compose.yml or create new one
+docker-compose up -d
+
+# Verify deployment
+docker ps | grep n8n-mcp
+docker logs n8n-mcp-server
+```
+
+4. **SSL/Domain Setup** (if using Traefik)
 ```yaml
+# Already configured in docker-compose.yml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.n8n-mcp.rule=Host(`your-mcp-server-domain.com`)"
+  - "traefik.http.routers.n8n-mcp.rule=Host(`your-domain.com`)"
   - "traefik.http.routers.n8n-mcp.entrypoints=websecure"
-  - "traefik.http.routers.n8n-mcp.tls=true"
   - "traefik.http.routers.n8n-mcp.tls.certresolver=mytlschallenge"
+```
+
+5. **Test Deployment**
+```bash
+# Health check
+curl https://your-domain.com/health
+
+# OAuth discovery
+curl https://your-domain.com/.well-known/oauth-authorization-server
 ```
 
 ## Architecture
@@ -170,30 +244,69 @@ Claude.ai → OAuth 2.1 → N8N MCP Server → N8N Instance
 
 ### Common Issues
 
-**Tools not appearing in Claude.ai:**
-- Verify OAuth flow completed successfully
-- Check server logs for authentication errors
-- Ensure N8N credentials are valid
+**🚫 Tools not appearing in Claude.ai**
+```bash
+# Check authentication
+docker logs n8n-mcp-server | grep "AUTH"
 
-**Connection timeouts:**
-- Verify firewall settings
-- Check reverse proxy configuration
-- Validate SSL certificate
+# Verify OAuth flow
+curl https://your-domain.com/.well-known/oauth-authorization-server
 
-**N8N API errors:**
-- Verify N8N instance is accessible
-- Check API key permissions
-- Confirm N8N version compatibility
+# Test tool discovery
+docker logs n8n-mcp-server | grep "tools/list"
+```
 
-### Logs
+**⏱️ Connection timeouts**
+```bash
+# Check server connectivity
+curl -I https://your-domain.com/health
+
+# Verify SSL certificate
+openssl s_client -connect your-domain.com:443 -servername your-domain.com
+
+# Check Docker networking
+docker network ls
+docker logs traefik | grep your-domain.com
+```
+
+**🔑 N8N API errors**
+```bash
+# Test N8N connectivity directly
+curl -H "Authorization: Bearer your-api-key" https://your-n8n.com/api/v1/workflows
+
+# Check API key permissions in N8N settings
+# Verify N8N instance is accessible from Docker network
+```
+
+**🔧 Response size issues**
+- Large workflow lists may cause timeouts
+- Server automatically truncates responses to prevent this
+- Check logs for "Response truncated" messages
+
+### Debug Commands
 
 ```bash
-# View server logs
+# Complete server logs
 docker logs n8n-mcp-server -f
 
-# View specific errors
-docker logs n8n-mcp-server 2>&1 | grep ERROR
+# Filter for errors only
+docker logs n8n-mcp-server 2>&1 | grep -E "(ERROR|error|Error)"
+
+# Check authentication flow
+docker logs n8n-mcp-server 2>&1 | grep -E "(oauth|auth|session)"
+
+# Monitor MCP protocol
+docker logs n8n-mcp-server 2>&1 | grep -E "(MCP|tools|prompts)"
 ```
+
+### Getting Help
+
+If you're still having issues:
+
+1. **Check GitHub Issues**: Look for similar problems
+2. **Enable Debug Logging**: Set `DEBUG=true` in environment
+3. **Share Logs**: Include relevant log snippets (remove sensitive data)
+4. **Describe Setup**: OS, Docker version, domain configuration
 
 ## License
 
