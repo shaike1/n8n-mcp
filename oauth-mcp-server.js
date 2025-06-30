@@ -31,9 +31,9 @@ function saveSessionData() {
 
 function loadSessionData() {
   try {
-    // FORCE FRESH SESSIONS: Skip loading any cached session data
-    console.log('SKIPPING session persistence - all sessions will be fresh');
-    return;
+    // Sessions are now persistent
+    // console.log('SKIPPING session persistence - all sessions will be fresh');
+    // return;
     
     const sessionFile = path.join(DATA_DIR, 'sessions.json');
     if (fs.existsSync(sessionFile)) {
@@ -94,9 +94,9 @@ const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'your_secure_admin_password_hash';
 const adminSessions = new Map(); // Track authenticated admin sessions
 
-// TEMPORARILY DISABLED: Load existing sessions on startup - force fresh credentials
-// loadSessionData();
-console.log('SESSION PERSISTENCE DISABLED: All sessions will be fresh');
+// Load existing sessions on startup
+loadSessionData();
+console.log('SESSION PERSISTENCE DISABLED: Loading existing sessions from disk');
 
 console.log('Admin Authentication:');
 console.log('Username:', ADMIN_USERNAME);
@@ -1169,10 +1169,14 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
   
-  // Health check
-  if (req.method === 'GET' && parsedUrl.pathname === '/health') {
+  // Health check - support both GET and HEAD requests
+  if ((req.method === 'GET' || req.method === 'HEAD') && parsedUrl.pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'healthy', server: 'n8n-mcp-server' }));
+    if (req.method === 'GET') {
+      res.end(JSON.stringify({ status: 'healthy', server: 'n8n-mcp-server' }));
+    } else {
+      res.end();
+    }
     return;
   }
   
@@ -1307,7 +1311,7 @@ const httpServer = http.createServer(async (req, res) => {
           } catch (err) {
             console.error('STREAMABLE HTTP 2025: Error sending tools over SSE:', err);
           }
-        }, 500);
+        }, 1000);
         
         // Keep connection alive with aggressive pinging to prevent Claude.ai timeouts
         const keepAlive = setInterval(() => {
@@ -1317,7 +1321,7 @@ const httpServer = http.createServer(async (req, res) => {
             console.log('Ping failed, connection likely closed');
             clearInterval(keepAlive);
           }
-        }, 10000); // Ping every 10 seconds for better stability
+        }, 8000); // Ping every 8 seconds for Claude.ai stability
         
         req.on('close', () => {
           clearInterval(keepAlive);
@@ -1602,10 +1606,10 @@ const httpServer = http.createServer(async (req, res) => {
             }
             
             // Add timeout protection for tool calls to prevent Claude.ai timeouts
-            console.log(`Tool call: ${message.params.name} with 15s timeout protection`);
+            console.log(`Tool call: ${message.params.name} with 900s timeout protection`);
             const toolCallPromise = callTool(message.params.name, message.params.arguments || {}, sessionToken);
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Tool call timeout after 15 seconds')), 15000)
+              setTimeout(() => reject(new Error('Tool call timeout after 900 seconds')), 900000)
             );
             
             try {
@@ -1736,7 +1740,7 @@ const httpServer = http.createServer(async (req, res) => {
           console.log('SSE ping failed, connection closed');
           clearInterval(keepAlive);
         }
-      }, 10000); // Ping every 10 seconds
+      }, 8000); // Ping every 8 seconds for Claude.ai stability
       
       req.on('close', () => {
         clearInterval(keepAlive);
@@ -1745,8 +1749,15 @@ const httpServer = http.createServer(async (req, res) => {
     } else if (req.method === 'DELETE') {
       const sessionId = req.headers['mcp-session-id'];
       if (sessionId) {
-        sessions.delete(sessionId);
-        console.log(`Session terminated: ${sessionId}`);
+        // Keep authentication but mark session as disconnected (like ha-mcp-bridge)
+        const sessionData = sessions.get(sessionId);
+        if (sessionData) {
+          sessionData.connected = false;
+          // Don't delete the session - keep auth for reconnection
+          console.log(`Session connection terminated: ${sessionId} (keeping auth)`);
+        } else {
+          console.log(`Session terminated: ${sessionId}`);
+        }
       }
       res.writeHead(200);
       res.end();
@@ -1760,6 +1771,11 @@ const httpServer = http.createServer(async (req, res) => {
   res.end('Not Found');
 });
 
+// Configure server timeouts for Claude.ai stability
+httpServer.timeout = 60000; // 60 seconds request timeout
+httpServer.keepAliveTimeout = 65000; // 65 seconds keep-alive
+httpServer.headersTimeout = 66000; // 66 seconds headers timeout
+
 const PORT = process.env.PORT || 3007; // Use environment PORT or 3007 as fallback
 console.log('Environment PORT:', process.env.PORT);
 console.log('Config port:', PORT);
@@ -1768,4 +1784,5 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`MCP endpoint: http://0.0.0.0:${PORT}/`);
   console.log(`OAuth discovery: http://0.0.0.0:${PORT}/.well-known/oauth-authorization-server`);
+  console.log(`Server timeouts: request=${httpServer.timeout}ms, keepAlive=${httpServer.keepAliveTimeout}ms`);
 });
