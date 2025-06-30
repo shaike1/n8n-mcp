@@ -304,22 +304,43 @@ async function callTool(name, args, sessionToken = null) {
       case "get_workflows":
         console.log('DEBUG: get_workflows called with sessionToken:', sessionToken ? 'PROVIDED' : 'NULL');
         
-        // TEMPORARY: Return hardcoded response to test if it's a response size issue
-        console.log('DEBUG: Returning hardcoded response for testing');
-        return {
-          content: [{
-            type: "text", 
-            text: JSON.stringify({
-              total: 1,
-              workflows: [{
-                id: "test123",
-                name: "Test Workflow", 
-                active: false,
-                nodeCount: 5
-              }]
-            }, null, 2)
-          }]
-        };
+        try {
+          const workflows = await n8nRequest('/workflows', {}, sessionToken);
+          console.log(`DEBUG: Retrieved ${workflows.data.length} workflows from N8N`);
+          
+          // ULTRA-AGGRESSIVE response optimization to prevent Claude.ai timeouts
+          let workflowSummary = {
+            total: workflows.data.length,
+            workflows: workflows.data.slice(0, 3).map(wf => ({  // Only first 3 workflows
+              id: wf.id,
+              name: wf.name.length > 30 ? wf.name.substring(0, 30) + '...' : wf.name, // Truncate names
+              active: wf.active,
+              nodes: wf.nodes ? wf.nodes.length : 0
+            }))
+          };
+          
+          if (workflows.data.length > 3) {
+            workflowSummary.note = `Showing first 3 of ${workflows.data.length} workflows for performance`;
+          }
+          
+          const response = JSON.stringify(workflowSummary, null, 1); // Minimal formatting
+          console.log(`DEBUG: Response size: ${response.length} chars (optimized for Claude.ai)`);
+          
+          return {
+            content: [{
+              type: "text",
+              text: response
+            }]
+          };
+        } catch (error) {
+          console.error('N8N API error in get_workflows:', error.message);
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({ error: "Failed to fetch workflows", details: error.message }, null, 1)
+            }]
+          };
+        }
         
       case "get_workflow":
         const workflow = await n8nRequest(`/workflows/${args.id}`, {}, sessionToken);
@@ -1288,14 +1309,30 @@ const httpServer = http.createServer(async (req, res) => {
           }
         }, 500);
         
-        // Keep connection alive
+        // Keep connection alive with aggressive pinging to prevent Claude.ai timeouts
         const keepAlive = setInterval(() => {
-          res.write('data: {"type":"ping"}\n\n');
-        }, 30000);
+          try {
+            res.write('data: {"type":"ping","timestamp":' + Date.now() + '}\n\n');
+          } catch (error) {
+            console.log('Ping failed, connection likely closed');
+            clearInterval(keepAlive);
+          }
+        }, 10000); // Ping every 10 seconds for better stability
         
         req.on('close', () => {
           clearInterval(keepAlive);
-          console.log('STREAMABLE HTTP 2025: SSE connection closed');
+          console.log('STREAMABLE HTTP 2025: SSE connection closed gracefully');
+        });
+        
+        req.on('error', (err) => {
+          clearInterval(keepAlive);
+          console.log('STREAMABLE HTTP 2025: SSE connection error:', err.message);
+        });
+        
+        // Handle client disconnection gracefully
+        res.on('error', (err) => {
+          clearInterval(keepAlive);
+          console.log('STREAMABLE HTTP 2025: Response stream error:', err.message);
         });
         
         return;
@@ -1564,12 +1601,33 @@ const httpServer = http.createServer(async (req, res) => {
               }
             }
             
-            const result = await callTool(message.params.name, message.params.arguments || {}, sessionToken);
-            response = {
-              jsonrpc: '2.0',
-              id: message.id,
-              result: result
-            };
+            // Add timeout protection for tool calls to prevent Claude.ai timeouts
+            console.log(`Tool call: ${message.params.name} with 15s timeout protection`);
+            const toolCallPromise = callTool(message.params.name, message.params.arguments || {}, sessionToken);
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Tool call timeout after 15 seconds')), 15000)
+            );
+            
+            try {
+              const result = await Promise.race([toolCallPromise, timeoutPromise]);
+              response = {
+                jsonrpc: '2.0',
+                id: message.id,
+                result: result
+              };
+              console.log(`Tool call ${message.params.name} completed successfully`);
+            } catch (error) {
+              console.error(`Tool call ${message.params.name} failed:`, error.message);
+              response = {
+                jsonrpc: '2.0',
+                id: message.id,
+                error: {
+                  code: -32000,
+                  message: 'Tool execution failed or timed out',
+                  data: error.message
+                }
+              };
+            }
           } else {
             // ULTIMATE HACK: For any unknown method, send tools
             console.log(`ULTIMATE HACK: Unknown method '${message.method}', sending tools anyway!`);
@@ -1670,9 +1728,15 @@ const httpServer = http.createServer(async (req, res) => {
         'Connection': 'keep-alive'
       });
       
+      // Aggressive keep-alive to prevent Claude.ai from marking integration as disabled
       const keepAlive = setInterval(() => {
-        res.write('data: {"type":"ping"}\n\n');
-      }, 30000);
+        try {
+          res.write('data: {"type":"ping","timestamp":' + Date.now() + '}\n\n');
+        } catch (error) {
+          console.log('SSE ping failed, connection closed');
+          clearInterval(keepAlive);
+        }
+      }, 10000); // Ping every 10 seconds
       
       req.on('close', () => {
         clearInterval(keepAlive);
