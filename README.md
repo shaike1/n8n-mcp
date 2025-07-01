@@ -95,7 +95,34 @@ docker-compose up -d
 docker logs n8n-mcp-server -f
 ```
 
-### 4️⃣ Integrate with Claude.ai
+### 4️⃣ Alternative: Quick Deploy with Cloudflare Tunnel
+
+For instant HTTPS access without domain setup:
+
+```bash
+# Install Cloudflare Tunnel
+curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+
+# Start the N8N MCP server locally
+docker run -d --name n8n-mcp-server -p 3005:3000 \
+  -e ADMIN_USERNAME=admin \
+  -e ADMIN_PASSWORD=your-secure-password-hash \
+  -e CORS_ORIGIN="https://claude.ai" \
+  your-built-image
+
+# Create instant HTTPS tunnel
+cloudflared tunnel --url http://localhost:3005
+```
+
+This creates a public HTTPS URL like:
+```
+https://random-words-generated.trycloudflare.com
+```
+
+Use this URL for Claude.ai integration - the server auto-detects the domain!
+
+### 5️⃣ Integrate with Claude.ai
 
 ![Claude.ai Settings](screenshots/claude-ai-integrations.png)
 *Screenshot: Adding MCP integration in Claude.ai Settings*
@@ -107,7 +134,7 @@ docker logs n8n-mcp-server -f
    *Screenshot: MCP server configuration form*
    
    - Name: `N8N Workflow Manager`
-   - URL: `https://your-domain.com/`
+   - URL: `https://your-domain.com/` or `https://your-tunnel.trycloudflare.com/`
    - Type: `MCP Server`
 
 3. **OAuth Authorization**: Login with admin credentials
@@ -151,6 +178,7 @@ Ask Claude: "Can you list my N8N workflows?"
 |----------|-------------|----------|
 | `PORT` | Server port (default: 3007) | No |
 | `HOST` | Server host (default: 0.0.0.0) | No |
+| `SERVER_URL` | Override server URL for OAuth endpoints | No** |
 | `ADMIN_USERNAME` | Admin login username | Yes |
 | `ADMIN_PASSWORD` | Admin password hash | Yes |
 | `N8N_HOST` | Default N8N instance URL | No* |
@@ -158,6 +186,8 @@ Ask Claude: "Can you list my N8N workflows?"
 | `CORS_ORIGIN` | Allowed CORS origins | Yes |
 
 *N8N credentials can be provided via environment variables as fallback or entered dynamically during login.
+
+**Server URL auto-detects from request headers (works with Cloudflare tunnels, ngrok, custom domains)
 
 ### 🐳 Docker Compose
 
