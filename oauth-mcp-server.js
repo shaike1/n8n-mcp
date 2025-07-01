@@ -18,6 +18,13 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// Helper function to auto-detect server URL from request
+function getServerUrl(req) {
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost:3005';
+  return process.env.SERVER_URL || `${protocol}://${host}`;
+}
+
 // Session persistence functions
 function saveSessionData() {
   const sessionData = {
@@ -510,14 +517,31 @@ const httpServer = http.createServer(async (req, res) => {
   
   const parsedUrl = url.parse(req.url, true);
   
+  // Handle /n8n prefix for path-based routing (normalize paths)
+  let normalizedPath = parsedUrl.pathname;
+  const originalPath = normalizedPath;
+  if (normalizedPath.startsWith('/n8n')) {
+    normalizedPath = normalizedPath.substring(4) || '/';
+  }
+  
+  // Debug logging for path normalization
+  console.log(`Path: ${originalPath} -> ${normalizedPath}`);
+  
   // OAuth discovery endpoint
-  if (req.method === 'GET' && parsedUrl.pathname === '/.well-known/oauth-authorization-server') {
+  if (req.method === 'GET' && normalizedPath === '/.well-known/oauth-authorization-server') {
+    // Auto-detect server URL from request headers
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host || req.headers['x-forwarded-host'] || 'localhost:3005';
+    const serverUrl = process.env.SERVER_URL || `${protocol}://${host}`;
+    
+    console.log(`OAuth Discovery: Auto-detected server URL: ${serverUrl}`);
+    
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
-      issuer: process.env.SERVER_URL || 'https://n8n-mcp.right-api.com',
-      authorization_endpoint: `${process.env.SERVER_URL || 'https://n8n-mcp.right-api.com'}/oauth/authorize`,
-      token_endpoint: `${process.env.SERVER_URL || 'https://n8n-mcp.right-api.com'}/oauth/token`,
-      registration_endpoint: `${process.env.SERVER_URL || 'https://n8n-mcp.right-api.com'}/oauth/register`,
+      issuer: serverUrl,
+      authorization_endpoint: `${serverUrl}/oauth/authorize`,
+      token_endpoint: `${serverUrl}/oauth/token`,
+      registration_endpoint: `${serverUrl}/oauth/register`,
       scopes_supported: ['mcp'],
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
@@ -527,7 +551,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Dynamic client registration
-  if (req.method === 'POST' && parsedUrl.pathname === '/oauth/register') {
+  if (req.method === 'POST' && normalizedPath === '/oauth/register') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
@@ -558,7 +582,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Token registration endpoint (for pre-registering API tokens)
-  if (req.method === 'POST' && parsedUrl.pathname === '/tokens/register') {
+  if (req.method === 'POST' && normalizedPath === '/tokens/register') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
@@ -602,7 +626,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Token management endpoint (list/revoke tokens)
-  if (req.method === 'GET' && parsedUrl.pathname === '/tokens') {
+  if (req.method === 'GET' && normalizedPath === '/tokens') {
     const tokens = [];
     for (const [token, data] of accessTokens.entries()) {
       tokens.push({
@@ -620,8 +644,8 @@ const httpServer = http.createServer(async (req, res) => {
     return;
   }
   
-  if (req.method === 'DELETE' && parsedUrl.pathname.startsWith('/tokens/')) {
-    const tokenToRevoke = parsedUrl.pathname.split('/tokens/')[1];
+  if (req.method === 'DELETE' && normalizedPath.startsWith('/tokens/')) {
+    const tokenToRevoke = normalizedPath.split('/tokens/')[1];
     if (accessTokens.has(tokenToRevoke)) {
       accessTokens.delete(tokenToRevoke);
       console.log(`Revoked token: ${tokenToRevoke}`);
@@ -635,7 +659,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Authorization endpoint
-  if (req.method === 'GET' && parsedUrl.pathname === '/oauth/authorize') {
+  if (req.method === 'GET' && normalizedPath === '/oauth/authorize') {
     const { client_id, redirect_uri, state, code_challenge, code_challenge_method, scope } = parsedUrl.query;
     
     // Accept Claude.ai client or any registered client
@@ -800,7 +824,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Login endpoint - Process username/password authentication
-  if (req.method === 'POST' && parsedUrl.pathname === '/oauth/login') {
+  if (req.method === 'POST' && normalizedPath === '/oauth/login') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -1025,7 +1049,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // OAuth approval endpoint (after user clicks "Allow")
-  if (req.method === 'GET' && parsedUrl.pathname === '/oauth/approve') {
+  if (req.method === 'GET' && normalizedPath === '/oauth/approve') {
     const { client_id, redirect_uri, state, code_challenge, code_challenge_method, scope } = parsedUrl.query;
     
     // Get admin session token from cookie
@@ -1057,7 +1081,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Token endpoint
-  if (req.method === 'POST' && parsedUrl.pathname === '/oauth/token') {
+  if (req.method === 'POST' && normalizedPath === '/oauth/token') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
     req.on('end', () => {
@@ -1170,7 +1194,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // Health check - support both GET and HEAD requests
-  if ((req.method === 'GET' || req.method === 'HEAD') && parsedUrl.pathname === '/health') {
+  if ((req.method === 'GET' || req.method === 'HEAD') && normalizedPath === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     if (req.method === 'GET') {
       res.end(JSON.stringify({ status: 'healthy', server: 'n8n-mcp-server' }));
@@ -1181,7 +1205,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // OpenAI Plugin: /.well-known/ai-plugin.json manifest
-  if (req.method === 'GET' && parsedUrl.pathname === '/.well-known/ai-plugin.json') {
+  if (req.method === 'GET' && normalizedPath === '/.well-known/ai-plugin.json') {
     console.log('OpenAI Plugin: ai-plugin.json manifest request');
     
     const manifest = {
@@ -1216,7 +1240,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
   
   // OpenAI Plugin: GET /tools endpoint
-  if (req.method === 'GET' && parsedUrl.pathname === '/tools') {
+  if (req.method === 'GET' && normalizedPath === '/tools') {
     console.log('OpenAI Plugin: GET /tools request');
     
     try {
@@ -1248,7 +1272,7 @@ const httpServer = http.createServer(async (req, res) => {
   
   // STREAMABLE HTTP MCP ENDPOINT (2025 spec compliance)
   // RFC: All client→server messages go through /message endpoint
-  if (parsedUrl.pathname === '/' || parsedUrl.pathname === '/message') {
+  if (normalizedPath === '/' || normalizedPath === '/message') {
     // STREAMABLE HTTP: Proper transport negotiation per MCP 2025 spec
     const acceptHeader = req.headers.accept || '';
     const supportsSSE = acceptHeader.includes('text/event-stream');
@@ -1295,18 +1319,17 @@ const httpServer = http.createServer(async (req, res) => {
             console.log(`STREAMABLE HTTP 2025: Sending tools/list_changed notification over SSE`);
             res.write(`data: ${JSON.stringify(toolsNotification)}\n\n`);
             
-            // Then send tools as a proper response that Claude should pick up
-            const toolsMessage = {
+            // Send proper notification with tools included (MCP 2.0 compliant)
+            const toolsNotificationWithData = {
               jsonrpc: '2.0',
-              method: 'tools/list',
-              id: 'sse-auto-' + Date.now(),
-              result: {
+              method: 'notifications/tools/list_changed',
+              params: {
                 tools: tools
               }
             };
             
-            console.log(`STREAMABLE HTTP 2025: Auto-sending tools/list over SSE (${tools.length} tools)`);
-            res.write(`data: ${JSON.stringify(toolsMessage)}\n\n`);
+            console.log(`STREAMABLE HTTP 2025: Auto-sending tools via notification (${tools.length} tools)`);
+            res.write(`data: ${JSON.stringify(toolsNotificationWithData)}\n\n`);
             
           } catch (err) {
             console.error('STREAMABLE HTTP 2025: Error sending tools over SSE:', err);
@@ -1420,7 +1443,7 @@ const httpServer = http.createServer(async (req, res) => {
               code: -32001,
               message: 'Unauthorized - OAuth authentication required',
               data: {
-                auth_url: `${process.env.SERVER_URL || 'https://n8n-mcp.right-api.com'}/.well-known/oauth-authorization-server`
+                auth_url: `${getServerUrl(req)}/.well-known/oauth-authorization-server`
               }
             }
           }));
@@ -1541,7 +1564,7 @@ const httpServer = http.createServer(async (req, res) => {
                 result: {
                   tools: tools,
                   _auth_required: true,
-                  _auth_url: `${process.env.SERVER_URL || 'https://n8n-mcp.right-api.com'}/.well-known/oauth-authorization-server`
+                  _auth_url: `${getServerUrl(req)}/.well-known/oauth-authorization-server`
                 }
               };
               console.log(`DISCOVERY: Sent ${tools.length} tools with auth requirement:`, tools.map(t => t.name).join(', '));
