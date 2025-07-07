@@ -19,10 +19,10 @@
 7. **get_executions** - View workflow execution history
 
 ### 🔗 **Live Endpoints**
-- **MCP Server**: https://n8n-mcp.right-api.com
-- **OAuth Discovery**: https://n8n-mcp.right-api.com/.well-known/oauth-authorization-server
-- **Health Check**: https://n8n-mcp.right-api.com/health
-- **Token Registration**: https://n8n-mcp.right-api.com/tokens/register
+- **MCP Server**: https://n8n-mcp.domain.com
+- **OAuth Discovery**: https://n8n-mcp.domain.com/.well-known/oauth-authorization-server
+- **Health Check**: https://n8n-mcp.domain.com/health
+- **Token Registration**: https://n8n-mcp.domain.com/tokens/register
 
 ### 📊 **Recent Activity Logs**
 ```
@@ -39,7 +39,7 @@ Claude.ai Web ↔ OAuth 2.1 ↔ MCP Server ↔ N8N API
 ```
 
 ### 🎯 **Your N8N Integration**
-- **N8N Server**: https://app.right-api.com
+- **N8N Server**: https://app.domain.com
 - **API Authentication**: X-N8N-API-KEY header
 - **Available Workflows**: 
   - familybot_backup_base (inactive)
@@ -59,5 +59,5 @@ Claude.ai Web ↔ OAuth 2.1 ↔ MCP Server ↔ N8N API
 
 ---
 *✅ Successfully deployed and tested on 2025-06-22*
-*🔗 Server: https://n8n-mcp.right-api.com*
+*🔗 Server: https://n8n-mcp.domain.com*
 *🛡️ Security: OAuth 2.1 + Bearer tokens validated*
