@@ -1,0 +1,125 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "0.0.0.0",
+    "env": "development",
+    "cors": {
+      "enabled": true,
+      "origins": ["*"],
+      "credentials": true
+    }
+  },
+  "auth": {
+    "jwtSecret": "change-this-in-production-use-a-long-random-string-32-chars-minimum",
+    "jwtExpiresIn": "24h",
+    "bcryptRounds": 12,
+    "sessionTimeout": 86400000,
+    "maxLoginAttempts": 5,
+    "lockoutDuration": 900000
+  },
+  "n8n": {
+    "instances": [
+      {
+        "id": "default",
+        "name": "Default n8n Instance",
+        "apiUrl": "http://localhost:5678/api/v1",
+        "apiKey": "",
+        "webhookUrl": "",
+        "timeout": 30000,
+        "retries": 3,
+        "isDefault": true
+      }
+    ],
+    "defaultInstance": "default"
+  },
+  "database": {
+    "type": "sqlite",
+    "path": "./data/cache.db",
+    "backup": {
+      "enabled": true,
+      "interval": 3600000,
+      "retention": 168
+    }
+  },
+  "cache": {
+    "defaultTTL": 300000,
+    "maxSize": 1000,
+    "cleanupInterval": 600000,
+    "strategies": {
+      "workflows": {
+        "ttl": 300000,
+        "maxSize": 500
+      },
+      "credentials": {
+        "ttl": 600000,
+        "maxSize": 200
+      },
+      "executions": {
+        "ttl": 180000,
+        "maxSize": 1000
+      }
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "combined",
+    "file": {
+      "enabled": true,
+      "path": "./logs",
+      "maxSize": "10M",
+      "maxFiles": 5
+    },
+    "console": {
+      "enabled": true,
+      "colorize": true
+    }
+  },
+  "security": {
+    "rateLimit": {
+      "enabled": true,
+      "windowMs": 900000,
+      "maxRequests": 100,
+      "skipSuccessfulRequests": false
+    },
+    "helmet": {
+      "enabled": true,
+      "contentSecurityPolicy": false,
+      "crossOriginEmbedderPolicy": false
+    },
+    "requestValidation": {
+      "enabled": true,
+      "maxBodySize": "10mb",
+      "parameterPollution": false
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000,
+      "timeout": 5000
+    },
+    "metrics": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "collectDefault": true
+    }
+  },
+  "features": {
+    "backup": {
+      "enabled": false,
+      "schedule": "0 2 * * *",
+      "destinations": []
+    },
+    "webhooks": {
+      "enabled": false,
+      "endpoint": "/webhooks",
+      "authentication": true
+    },
+    "apiDocs": {
+      "enabled": true,
+      "endpoint": "/docs",
+      "title": "n8n MCP API",
+      "version": "1.0.0"
+    }
+  }
+}

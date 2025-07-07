@@ -1,0 +1,42 @@
+{
+  "server": {
+    "env": "staging",
+    "cors": {
+      "origins": ["https://staging.your-domain.com", "https://staging-admin.your-domain.com"]
+    }
+  },
+  "auth": {
+    "jwtSecret": "${JWT_SECRET}",
+    "bcryptRounds": 12,
+    "maxLoginAttempts": 5
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  },
+  "security": {
+    "rateLimit": {
+      "maxRequests": 75
+    }
+  },
+  "cache": {
+    "defaultTTL": 300000,
+    "strategies": {
+      "workflows": {
+        "ttl": 300000
+      },
+      "credentials": {
+        "ttl": 600000
+      },
+      "executions": {
+        "ttl": 180000
+      }
+    }
+  },
+  "features": {
+    "backup": {
+      "enabled": true,
+      "schedule": "0 3 * * *"
+    }
+  }
+}

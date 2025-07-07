@@ -1,0 +1,55 @@
+{
+  "server": {
+    "env": "production",
+    "cors": {
+      "origins": ["https://your-domain.com", "https://admin.your-domain.com"]
+    }
+  },
+  "auth": {
+    "jwtSecret": "${JWT_SECRET}",
+    "bcryptRounds": 14,
+    "maxLoginAttempts": 3,
+    "lockoutDuration": 1800000
+  },
+  "logging": {
+    "level": "warn",
+    "format": "json",
+    "console": {
+      "colorize": false
+    }
+  },
+  "security": {
+    "rateLimit": {
+      "maxRequests": 50,
+      "windowMs": 900000
+    },
+    "helmet": {
+      "contentSecurityPolicy": true,
+      "crossOriginEmbedderPolicy": true
+    }
+  },
+  "cache": {
+    "defaultTTL": 600000,
+    "strategies": {
+      "workflows": {
+        "ttl": 600000
+      },
+      "credentials": {
+        "ttl": 1200000
+      },
+      "executions": {
+        "ttl": 300000
+      }
+    }
+  },
+  "features": {
+    "backup": {
+      "enabled": true,
+      "schedule": "0 2 * * *",
+      "destinations": ["s3://your-backup-bucket/n8n-mcp"]
+    },
+    "apiDocs": {
+      "enabled": false
+    }
+  }
+}

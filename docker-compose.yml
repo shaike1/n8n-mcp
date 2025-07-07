@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  mcp:
+    build: .
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src # For development/live reload (optional)
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n-mcp.rule=Host(`n8n-mcp.right-api.com`)"
+      - "traefik.http.routers.n8n-mcp.entrypoints=websecure"
+      - "traefik.http.routers.n8n-mcp.tls.certresolver=myresolver"
+networks:
+  traefik-public:
+    external: true 

@@ -1,0 +1,40 @@
+{
+  "server": {
+    "env": "development"
+  },
+  "auth": {
+    "jwtSecret": "dev-secret-key-change-in-production-32-chars-minimum-length",
+    "bcryptRounds": 10
+  },
+  "logging": {
+    "level": "debug",
+    "format": "simple"
+  },
+  "security": {
+    "rateLimit": {
+      "enabled": false
+    },
+    "helmet": {
+      "enabled": false
+    }
+  },
+  "cache": {
+    "defaultTTL": 60000,
+    "strategies": {
+      "workflows": {
+        "ttl": 60000
+      },
+      "credentials": {
+        "ttl": 120000
+      },
+      "executions": {
+        "ttl": 30000
+      }
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "interval": 10000
+    }
+  }
+}
